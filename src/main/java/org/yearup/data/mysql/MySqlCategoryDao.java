@@ -103,8 +103,18 @@ public class MySqlCategoryDao extends MySqlDaoBase implements CategoryDao {
     @Override
     public void update(int categoryId, Category category)
     {
-        // update category
-    }
+        try(Connection c = ds.getConnection();
+            PreparedStatement q = c.prepareStatement("""
+                UPDATE
+                    categories
+                SET
+                    Category_ID = COALESCE(?, Category_ID)
+                    Name = COALESCE(?, Name)
+                    Description = COALESCE(?, Description)                    
+                WHERE
+                    Category_ID = ?
+                """)) {
+        }
 
     @Override
     public void delete(int categoryId)
