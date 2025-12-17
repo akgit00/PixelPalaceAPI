@@ -44,4 +44,41 @@ public class MySqlProfileDao extends MySqlDaoBase implements ProfileDao
         }
     }
 
+    @Override
+    public Profile update(int userId, Profile profile) {
+        try(
+                Connection c = ds.getConnection();
+                PreparedStatement q = c.prepareStatement("""
+                        UPDATE 
+                            Profiles
+                        SET 
+                            first_name = COALESCE(?, first_name),
+                            last_name = COALESCE(?, last_name),
+                            phone = COALESCE(?, phone),
+                            email = COALESCE(?,email),
+                            address = COALESCE(?, address),
+                            city = COALESCE(?, city),
+                            state = COALESCE(?, state),
+                            zip = COALESCE(?,zip)
+                        WHERE
+                            user_id = ?
+                        """)
+        ){
+            q.setString(1, profile.getFirstName());
+            q.setString(2, profile.getLastName());
+            q.setString(3, profile.getPhone());
+            q.setString(4, profile.getEmail());
+            q.setString(5, profile.getAddress());
+            q.setString(6, profile.getCity());
+            q.setString(7, profile.getState());
+            q.setString(8, profile.getZip());
+            q.setInt(9, userId);
+
+            q.executeUpdate();
+        }catch(SQLException e){
+            System.out.println("Error updating profile" + e);
+        }
+        return null;
+    }
+
 }
