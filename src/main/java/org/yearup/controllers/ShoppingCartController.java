@@ -1,7 +1,10 @@
 package org.yearup.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.yearup.data.ProductDao;
@@ -16,7 +19,8 @@ import java.security.Principal;
 @RestController
 
 // only logged in users should have access to these actions
-@PreAuthorize("hasRole('ROLE_USER')")
+@PreAuthorize("hasAnyRole('USER','ADMIN')")
+@RequestMapping("/cart")
 
 public class ShoppingCartController
 {
@@ -25,8 +29,17 @@ public class ShoppingCartController
     private UserDao userDao;
     private ProductDao productDao;
 
+    //this is a constructor that injects the required DAO dependencies for the controller
+    @Autowired
+    public ShoppingCartController(ShoppingCartDao shoppingCartDao, UserDao userDao, ProductDao productDao) {
+        this.shoppingCartDao = shoppingCartDao;
+        this.userDao = userDao;
+        this.productDao = productDao;
+    }
 
 
+
+    @GetMapping("")
     // each method in this controller requires a Principal object as a parameter
     public ShoppingCart getCart(Principal principal)
     {
@@ -39,11 +52,11 @@ public class ShoppingCartController
             int userId = user.getId();
 
             // use the shoppingcartDao to get all items in the cart and return the cart
-            return null;
+            return shoppingCartDao.getByUserId(userId);
         }
         catch(Exception e)
         {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad." + e);
         }
     }
 
