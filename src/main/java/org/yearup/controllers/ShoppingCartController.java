@@ -111,22 +111,33 @@ public class ShoppingCartController
     }
 
     @PostMapping("/checkout")
-    public Map<String, Object> checkout(Principal principal){
+    public Map<String, Object> checkout(Principal principal) {
+        //retrieve the authenticated user from Spring Security
         User user = userDao.getByUserName(principal.getName());
+
+        //get the user's profile, which contains shipping and address information
         Profile profile = profileDao.getProfileByUserID(user.getId());
+
+        //get the user's current shopping cart, including items and totals
         ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
 
-
+        //calculate the total cost of the items in the cart
         BigDecimal total = cart.getTotal();
 
-        orderDao.checkout(profile,cart);
+        //create a new order in the database using profile & cart data
+        orderDao.checkout(profile, cart);
+
+        //clear the user's cart after successful checkout
         shoppingCartDao.clearCart(user.getId());
 
+        //build a receipt response containing the total and confirmation message
         Map<String, Object> receipt = new HashMap<>();
         receipt.put("total", total);
         receipt.put("message", "Checkout Successful!");
 
+        //return the receipt as API response
         return receipt;
+    }
     }
 
 
