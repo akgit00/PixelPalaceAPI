@@ -1,6 +1,8 @@
 package org.yearup.data.mysql;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import org.yearup.models.Profile;
 import org.yearup.data.ProfileDao;
 
@@ -46,24 +48,28 @@ public class MySqlProfileDao extends MySqlDaoBase implements ProfileDao
 
     @Override
     public Profile update(int userId, Profile profile) {
-        try(
+        try (
                 Connection c = ds.getConnection();
+                //update the user's profile. COALESCE ensures that if a provided value is null,
+                //the existing value in the database is retained instead of being overwritten.
                 PreparedStatement q = c.prepareStatement("""
-                        UPDATE 
-                            Profiles
-                        SET 
-                            first_name = COALESCE(?, first_name),
-                            last_name = COALESCE(?, last_name),
-                            phone = COALESCE(?, phone),
-                            email = COALESCE(?,email),
-                            address = COALESCE(?, address),
-                            city = COALESCE(?, city),
-                            state = COALESCE(?, state),
-                            zip = COALESCE(?,zip)
-                        WHERE
-                            user_id = ?
-                        """)
-        ){
+                    UPDATE 
+                        Profiles
+                    SET 
+                        first_name = COALESCE(?, first_name),
+                        last_name = COALESCE(?, last_name),
+                        phone = COALESCE(?, phone),
+                        email = COALESCE(?, email),
+                        address = COALESCE(?, address),
+                        city = COALESCE(?, city),
+                        state = COALESCE(?, state),
+                        zip = COALESCE(?, zip)
+                    WHERE
+                        user_id = ?
+                    """)
+        ) {
+            //map profile field values to the SQL statement parameters
+            //(may be null — COALESCE handles that in SQL).
             q.setString(1, profile.getFirstName());
             q.setString(2, profile.getLastName());
             q.setString(3, profile.getPhone());
@@ -74,11 +80,49 @@ public class MySqlProfileDao extends MySqlDaoBase implements ProfileDao
             q.setString(8, profile.getZip());
             q.setInt(9, userId);
 
-            q.executeUpdate();
-        }catch(SQLException e){
+            q.executeUpdate(); //execute the update statement
+        } catch (SQLException e) {
             System.out.println("Error updating profile" + e);
         }
         return null;
+    }
+
+    public Profile getProfileByUserID(int userID) {
+        Profile profile = new Profile();
+
+        try (
+                Connection c = ds.getConnection();
+                //query the database for the profile with the given user ID
+                PreparedStatement q = c.prepareStatement("""
+                    SELECT user_id, first_name, last_name, phone, email, address, city, state, zip
+                    FROM Profiles
+                    WHERE user_id = ?
+                    """)
+        ) {
+            q.setInt(1, userID);
+
+            ResultSet r = q.executeQuery();
+
+            if (r.next()) {
+                //populate the Profile object with database values
+                profile.setUserId(userID);
+                profile.setFirstName(r.getString("first_name"));
+                profile.setLastName(r.getString("last_name"));
+                profile.setPhone(r.getString("phone"));
+                profile.setEmail(r.getString("email"));
+                profile.setAddress(r.getString("address"));
+                profile.setCity(r.getString("city"));
+                profile.setState(r.getString("state"));
+                profile.setZip(r.getString("zip"));
+            } else {
+                //throw an HTTP 404 response
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error getting profile" + e);
+        }
+
+        return profile;
     }
 
 }
