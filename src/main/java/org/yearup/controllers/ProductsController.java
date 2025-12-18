@@ -36,7 +36,7 @@ public class ProductsController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("{id}")
     @PreAuthorize("permitAll()")
     public Product getById(@PathVariable int id) {
         {
@@ -72,7 +72,7 @@ public class ProductsController {
             try {
                 productDao.update(id, product);
             } catch (Exception ex) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad." + ex);
             }
         }
 
