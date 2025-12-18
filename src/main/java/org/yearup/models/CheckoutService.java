@@ -25,3 +25,4 @@ public class CheckoutService {
         this.productDao = productDao;
         this.profileDao = profileDao;
     }
+}

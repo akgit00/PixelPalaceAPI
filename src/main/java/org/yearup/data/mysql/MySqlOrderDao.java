@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import org.yearup.data.OrderDao;
 import org.yearup.models.Profile;
 import org.yearup.models.ShoppingCart;
+import org.yearup.models.ShoppingCartItem;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -22,8 +23,7 @@ public class MySqlOrderDao extends MySqlDaoBase implements OrderDao {
     }
 
     @Override
-    public void checkout(Profile profile, ShoppingCart cart) {
-        //calculate total cost of items in the cart
+    public void createOrder(Profile profile, ShoppingCart cart) {
         BigDecimal total = cart.getTotal();
 
         //get the current date for the order record
@@ -54,6 +54,25 @@ public class MySqlOrderDao extends MySqlDaoBase implements OrderDao {
             q.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Error checking out " + e);
+        }
+    }
+
+    @Override
+    public void addOrderToDatabase(int orderId, ShoppingCartItem item ){
+        try(Connection c = ds.getConnection();
+            PreparedStatement q = c.prepareStatement("""
+                INSERT INTO order_line_items (order_id, product_id, sales_price, quantity, discount)
+                VALUES (?,?,?,?,?)
+                """) ){
+            q.setInt(1, orderId);
+            q.setInt(2, item.getProductId());
+            q.setBigDecimal(3,item.getLineTotal());
+            q.setInt(4, item.getQuantity());
+            q.setBigDecimal(5, item.getDiscountPercent());
+
+            q.executeUpdate();
+        }catch(SQLException e){
+            System.out.println("Error adding to database");
         }
     }
 }
