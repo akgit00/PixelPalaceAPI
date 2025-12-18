@@ -36,12 +36,12 @@ public class CheckoutService {
         Profile profile = profileDao.getProfileByUserID(userId);
 
 
-        orderDao.createOrder(profile,cart);
+        int orderId = orderDao.createOrder(profile,cart);
 
 
         cart.getItems().values().forEach(item -> {
-            productDao.updateStock(item.getProductId(), item.getQuantity());
-            orderDao.addOrderToDatabase(userId, item);
+            orderDao.updateStock(item.getProductId(), item.getQuantity());
+            orderDao.addOrderToDatabase(orderId, item);
         });
 
 

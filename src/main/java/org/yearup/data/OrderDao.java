@@ -6,7 +6,9 @@ import org.yearup.models.ShoppingCartItem;
 
 public interface OrderDao {
 
-    public void createOrder(Profile profile, ShoppingCart cart);
+    int createOrder(Profile profile, ShoppingCart cart);
 
-    public void addOrderToDatabase(int orderId, ShoppingCartItem item);
+    void addOrderToDatabase(int orderId, ShoppingCartItem item);
+
+    void updateStock(int productId, int quantity);
 }
