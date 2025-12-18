@@ -6,10 +6,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.yearup.data.*;
-import org.yearup.models.Profile;
-import org.yearup.models.ShoppingCart;
-import org.yearup.models.ShoppingCartItem;
-import org.yearup.models.User;
+import org.yearup.models.*;
 
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -32,15 +29,17 @@ public class ShoppingCartController
     private ProductDao productDao;
     private ProfileDao profileDao;
     private OrderDao orderDao;
+    private CheckoutService checkoutService;
 
     //this is a constructor that injects the required DAO dependencies for the controller
     @Autowired
-    public ShoppingCartController(ShoppingCartDao shoppingCartDao, UserDao userDao, ProductDao productDao, ProfileDao profileDao, OrderDao orderDao) {
+    public ShoppingCartController(ShoppingCartDao shoppingCartDao, UserDao userDao, ProductDao productDao, ProfileDao profileDao, OrderDao orderDao,CheckoutService checkoutService) {
         this.shoppingCartDao = shoppingCartDao;
         this.userDao = userDao;
         this.productDao = productDao;
         this.profileDao = profileDao;
         this.orderDao = orderDao;
+        this.checkoutService = checkoutService;
     }
 
 
@@ -112,30 +111,15 @@ public class ShoppingCartController
 
     @PostMapping("/checkout")
     public Map<String, Object> checkout(Principal principal) {
-        //retrieve the authenticated user from Spring Security
-        User user = userDao.getByUserName(principal.getName());
+        String userName = principal.getName();
+        User user = userDao.getByUserName(userName);
 
-        //get the user's profile, which contains shipping and address information
-        Profile profile = profileDao.getProfileByUserID(user.getId());
+        BigDecimal total = checkoutService.checkout(user.getId());
 
-        //get the user's current shopping cart, including items and totals
-        ShoppingCart cart = shoppingCartDao.getByUserId(user.getId());
-
-        //calculate the total cost of the items in the cart
-        BigDecimal total = cart.getTotal();
-
-        //create a new order in the database using profile & cart data
-        orderDao.checkout(profile, cart);
-
-        //clear the user's cart after successful checkout
-        shoppingCartDao.clearCart(user.getId());
-
-        //build a receipt response containing the total and confirmation message
-        Map<String, Object> receipt = new HashMap<>();
-        receipt.put("total", total);
-        receipt.put("message", "Checkout Successful!");
+        Map<String, Object> output = new HashMap<>();
+        output.put("total", total);
 
         //return the receipt as API response
-        return receipt;
+        return output;
     }
     }

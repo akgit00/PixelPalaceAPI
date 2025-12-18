@@ -11,6 +11,7 @@ import org.yearup.models.User;
 import java.security.Principal;
 
 @RestController
+@PreAuthorize("hasAnyRole('USER','ADMIN')")
 @RequestMapping("/profile")
 @CrossOrigin
 public class ProfileController {
